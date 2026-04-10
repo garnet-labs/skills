@@ -1,0 +1,33 @@
+name: Garnet Runtime Visibility — skills
+on:
+  workflow_dispatch:
+jobs:
+  skill-install:
+    name: "Skill: ${{ matrix.skill }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix: {"include": [{"skill": "00010110"}, {"skill": "0xjims"}, {"skill": "1103-ss"}, {"skill": "1808182171"}, {"skill": "2393970875"}, {"skill": "3824108-cell"}, {"skill": "6022-protocol"}, {"skill": "94w666"}, {"skill": "aaiccee"}, {"skill": "abendeng"}, {"skill": "acilgit"}, {"skill": "addysmoke"}, {"skill": "adversa-ai"}, {"skill": "agimodel"}, {"skill": "ai-warden"}, {"skill": "airoom-ai"}, {"skill": "akira82-ai"}, {"skill": "aleksandar-jive"}, {"skill": "alexleach"}, {"skill": "aliyun-ai-sec"}]}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Garnet Runtime Visibility
+        uses: garnet-org/action@v2
+        with:
+          api_token: ${{ secrets.GARNET_API_TOKEN }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install skill requirements
+        run: |
+          skill_dir="skills/${{ matrix.skill }}"
+          req="$skill_dir/requirements.txt"
+          if [ -f "$req" ]; then
+            echo "Installing ${{ matrix.skill }} requirements"
+            pip install -r "$req" --no-cache-dir 2>&1 | tail -20
+          else
+            echo "No requirements.txt for ${{ matrix.skill }}, skipping"
+          fi
+      - name: Skill metadata
+        run: |
+          cat "skills/${{ matrix.skill }}/skill.json" 2>/dev/null | python3 -m json.tool | head -20 || true
