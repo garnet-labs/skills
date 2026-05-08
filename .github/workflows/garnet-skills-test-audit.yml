@@ -1,0 +1,62 @@
+name: Garnet — Skills Test Runner Audit
+on:
+  workflow_dispatch:
+jobs:
+  skill-test:
+    name: "Skill Test: ${{ matrix.skill }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      matrix: {"include":[{"skill":"0xnyk/xint","runners":"npm"},{"skill":"199-bio/clinstagram","runners":"pytest"},{"skill":"43622283/li-etl-handle","runners":"npm"},{"skill":"abdhilabs/agent-credit-system","runners":"npm"},{"skill":"abdhilabs/karmabank","runners":"npm"},{"skill":"aboutyao/cognitive-brain","runners":"npm"},{"skill":"actualcwhitlock/humanizer-2","runners":"npm"},{"skill":"addogiavara-tech/openclaw-soul-weaver","runners":"npm"},{"skill":"addogiavara-tech/soul-weaver","runners":"npm"},{"skill":"aeromomo/cut-your-tokens-97percent-savings-on-session-transcripts-via-observation-extraction","runners":"pytest"},{"skill":"aetherclawai/aethercore","runners":"pytest"},{"skill":"agentc22/x402engine","runners":"npm"},{"skill":"ahmadabugosh/buffer-social","runners":"npm"},{"skill":"aigeneralstore/portfolio-tracking-skill","runners":"npm"},{"skill":"alan-silverstreams/clawnexus","runners":"npm"},{"skill":"alexrudloff/clawchat-p2p","runners":"npm"},{"skill":"amanbhandula/moltarxiv","runners":"npm"},{"skill":"anajuliabit/mamo","runners":"npm"},{"skill":"and3rn3t/apple-music-dj","runners":"pytest"},{"skill":"and3rn3t/apple-photos-cleaner","runners":"pytest"},{"skill":"angjustinl/asset-library-skill","runners":"npm"},{"skill":"ankechenlab-node/amber-hunter","runners":"pytest"},{"skill":"anoyix/stock-cli","runners":"pytest"},{"skill":"arosstale/openclaw-memories","runners":"npm"},{"skill":"arosstale/openclaw-memory-2","runners":"npm"},{"skill":"asgcompute/agentcard","runners":"npm"},{"skill":"atlaspa/openclaw-context-optimizer","runners":"npm"},{"skill":"aure-duncan/aurehub-hyperliquid-trade","runners":"npm"},{"skill":"aure-duncan/aurehub-polymarket-trade","runners":"npm"},{"skill":"aure-duncan/aurehub-xaut-trade","runners":"npm"},{"skill":"autogame-17/capability-evolver","runners":"npm"},{"skill":"autogame-17/evolver","runners":"npm"},{"skill":"awsome-o/grafana-lens","runners":"npm"},{"skill":"ayao99315/opennexum","runners":"npm"},{"skill":"ayao99315/opennexum-ts","runners":"npm"},{"skill":"banxian87/agent-architecture-patterns","runners":"npm"},{"skill":"baojun-billion/pretext-reporter-bao","runners":"npm"},{"skill":"barry0-0/career-compass","runners":"pytest"},{"skill":"bedesta5050/the-flip-publish-2","runners":"npm"},{"skill":"bingbox/wecom-deep-op","runners":"npm"},{"skill":"bloodandeath/openforge","runners":"pytest"},{"skill":"bowen31337/rsi-loop","runners":"pytest"},{"skill":"brandonwise/ai-humanizer","runners":"npm"},{"skill":"brennan3/clabcraw","runners":"npm"},{"skill":"brianleach/cta","runners":"npm"},{"skill":"britrik/skill-vettr","runners":"npm"},{"skill":"c-goro/agentledger","runners":"npm"},{"skill":"catsmeow492/nochat-channel","runners":"npm"},{"skill":"cdz0451/munger-decision-free","runners":"npm"}]}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Garnet Runtime Visibility
+        uses: garnet-org/action@v2
+        with:
+          api_token: ${{ secrets.GARNET_API_TOKEN }}
+          jibril_version: v2.10.9
+      - uses: actions/setup-node@v4
+        if: contains(matrix.runners, 'npm')
+        with:
+          node-version: "20"
+      - uses: actions/setup-python@v5
+        if: contains(matrix.runners, 'pytest')
+        with:
+          python-version: "3.12"
+      - name: Run npm install + test
+        if: contains(matrix.runners, 'npm')
+        continue-on-error: true
+        timeout-minutes: 6
+        working-directory: skills/${{ matrix.skill }}
+        run: |
+          # Find the package.json — could be at root or in subdir
+          if [ -f package.json ]; then
+            pkg_dir="."
+          else
+            pkg_dir=$(find . -maxdepth 2 -name package.json | head -1 | xargs dirname 2>/dev/null || echo ".")
+          fi
+          cd "$pkg_dir"
+          echo "::group::npm install"
+          (npm ci --no-audit --no-fund 2>&1 || npm install --no-audit --no-fund 2>&1) | tail -40
+          echo "::endgroup::"
+          echo "::group::npm test"
+          # Just runs whatever 'test' script is — that's the attack surface
+          timeout 240 npm test 2>&1 | tail -60 || echo "test exit: $?"
+          echo "::endgroup::"
+      - name: Run pip install + pytest
+        if: contains(matrix.runners, 'pytest')
+        continue-on-error: true
+        timeout-minutes: 6
+        working-directory: skills/${{ matrix.skill }}
+        run: |
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt --no-cache-dir 2>&1 | tail -20 || true
+          fi
+          if [ -f pyproject.toml ]; then
+            pip install -e . --no-cache-dir 2>&1 | tail -20 || true
+          fi
+          pip install pytest --no-cache-dir 2>&1 | tail -5
+          echo "::group::pytest"
+          timeout 240 pytest 2>&1 | tail -60 || echo "pytest exit: $?"
+          echo "::endgroup::"
