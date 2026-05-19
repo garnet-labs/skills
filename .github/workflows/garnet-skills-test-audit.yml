@@ -15,7 +15,6 @@ jobs:
         uses: garnet-org/action@v2.0.2
         with:
           api_token: ${{ secrets.GARNET_API_TOKEN }}
-          jibril_version: v2.10.9
       - uses: actions/setup-node@v4
         if: contains(matrix.runners, 'npm')
         with:
