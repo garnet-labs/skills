@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Garnet Runtime Visibility
-        uses: garnet-org/action@v2
+        uses: garnet-org/action@v2.0.2
         with:
           api_token: ${{ secrets.GARNET_API_TOKEN }}
           jibril_version: v2.10.9
