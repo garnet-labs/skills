@@ -63,9 +63,9 @@
     "@typescript-eslint/parser": "^8.19.1",
     "eslint": "^9.18.0",
     "pino-pretty": "^13.0.0",
-    "tsx": "^4.19.2",
+    "tsx": "^4.22.4",
     "typescript": "^5.7.3",
-    "vitest": "^2.1.8"
+    "vitest": "^4.1.8"
   },
   "files": [
     "dist/",
